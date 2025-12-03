@@ -95,19 +95,24 @@ if scelta == "📝 NUOVA SCHEDA":
 
     st.markdown("---")
 
-    # --- STEP 3: CHIUSURA ECONOMICA (ACCONTO) ---
-    st.markdown("#### 3. Proposta & Acconto")
+    # --- STEP 3: PROPOSTA ---
+    st.markdown("#### 3. Proposta")
     
     prezzo_totale = prezzo_singolo * n_vendute
     
-    # Sconto "Discreto"
+    # Menu espandibile "discreto" per lo sconto
     with st.expander("⚙️ Opzioni Amministrative (Clicca per modificare)"):
         st.caption("Inserisci qui un importo per ricalcolare il totale.")
-        sconto_euro = st.number_input("Riduzione Importo (€):", value=0.0, step=10.0)
+        # MODIFICA: min_value=0 blocca i negativi, max_value=prezzo_totale blocca sconti assurdi
+        sconto_euro = st.number_input("Riduzione Importo (€):", 
+                                     value=0.0, 
+                                     step=10.0, 
+                                     min_value=0.0, 
+                                     max_value=float(prezzo_totale))
 
     prezzo_finale = prezzo_totale - sconto_euro
 
-    # Visualizzazione Prezzo Totale
+    # Visualizzazione Prezzi
     if sconto_euro > 0:
         st.caption("Prezzo Listino:")
         st.markdown(f"#### <strike style='color:red'>€ {prezzo_totale:.2f}</strike>", unsafe_allow_html=True)
@@ -115,28 +120,30 @@ if scelta == "📝 NUOVA SCHEDA":
     st.caption("Totale Pacchetto:")
     st.markdown(f"## € {prezzo_finale:.2f}")
 
-    st.markdown("---")
+    # LOGICA CONDIZIONALE ACCONTO
+    # L'acconto e il saldo appaiono SOLO se c'è uno sconto attivo
+    acconto = 0.0
+    saldo = prezzo_finale
     
-    # QUI C'È LA MAGIA DELL'ACCONTO
-    st.markdown("##### 🔒 Blocca Prezzo / Acconto")
-    col_acc1, col_acc2 = st.columns(2)
-    
-    with col_acc1:
-        # L'estetista chiede: "Quanto versi oggi per bloccarlo?"
-        acconto = st.number_input("Versa Oggi (€):", min_value=0.0, step=10.0)
-    
-    saldo = prezzo_finale - acconto
-    
-    with col_acc2:
+    if sconto_euro > 0:
+        st.markdown("---")
+        st.markdown("##### 🔒 Blocca Prezzo (Richiesto Acconto)")
+        col_acc1, col_acc2 = st.columns(2)
+        
+        with col_acc1:
+            acconto = st.number_input("Versa Oggi (€):", min_value=0.0, max_value=prezzo_finale, step=10.0)
+        
+        saldo = prezzo_finale - acconto
+        
+        with col_acc2:
+            if acconto > 0:
+                st.metric(label="DA SALDARE (Futuro)", value=f"€ {saldo:.2f}")
+            else:
+                st.info("Inserisci acconto per confermare lo sconto.")
+
         if acconto > 0:
-            st.metric(label="DA SALDARE (Rate/Futuro)", value=f"€ {saldo:.2f}")
-        else:
-            st.info("Inserisci un acconto per bloccare l'offerta.")
-
-    # Feedback visivo forte
-    if acconto > 0:
-        st.success(f"✅ OFFERTA BLOCCATA! Il paziente versa € {acconto} oggi.")
-
+            st.success(f"✅ OFFERTA BLOCCATA! Versati € {acconto}")
+    
     st.markdown("---")
 
     # --- SALVATAGGIO ---
@@ -147,7 +154,7 @@ if scelta == "📝 NUOVA SCHEDA":
             if acconto > 0:
                 dettaglio_pagamento = f"🔒 ACCONTO: € {acconto:.2f}\n⏳ SALDO: € {saldo:.2f}"
             else:
-                dettaglio_pagamento = f"💰 TOTALE: € {prezzo_finale:.2f} (Nessun acconto)"
+                dettaglio_pagamento = f"💰 TOTALE: € {prezzo_finale:.2f} (Pagamento Standard)"
 
             record = {
                 "Ora": datetime.datetime.now().strftime("%H:%M"),
