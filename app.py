@@ -73,7 +73,8 @@ if scelta == "📝 NUOVA SCHEDA":
         with col_man1:
             trattamento_scelto = st.text_input("Nome Trattamento (Libero):", placeholder="Es. Protocollo Sposa")
         with col_man2:
-            prezzo_singolo = st.number_input("Prezzo 1 Seduta (€):", value=0.0, step=10.0)
+            # MODIFICA QUI: Aggiunto min_value=0.0 per bloccare i negativi
+            prezzo_singolo = st.number_input("Prezzo 1 Seduta (€):", value=0.0, step=10.0, min_value=0.0)
 
     # Definizione Sedute
     st.write("") 
@@ -83,7 +84,11 @@ if scelta == "📝 NUOVA SCHEDA":
     with col_b:
         n_vendute = st.number_input("Sedute PROPOSTE:", value=6, min_value=1)
 
-    efficacia = min(int((n_vendute / n_ideali) * 100), 100)
+    # Evitiamo divisioni per zero se n_ideali è 0 (sicurezza extra)
+    if n_ideali > 0:
+        efficacia = min(int((n_vendute / n_ideali) * 100), 100)
+    else:
+        efficacia = 0
     
     st.progress(efficacia)
     if efficacia < 50:
@@ -103,7 +108,8 @@ if scelta == "📝 NUOVA SCHEDA":
     # Menu espandibile "discreto" per lo sconto
     with st.expander("⚙️ Opzioni Amministrative (Clicca per modificare)"):
         st.caption("Inserisci qui un importo per ricalcolare il totale.")
-        # MODIFICA: min_value=0 blocca i negativi, max_value=prezzo_totale blocca sconti assurdi
+        # min_value=0.0 blocca i negativi
+        # max_value=prezzo_totale impedisce di scontare più del prezzo stesso
         sconto_euro = st.number_input("Riduzione Importo (€):", 
                                      value=0.0, 
                                      step=10.0, 
@@ -121,7 +127,6 @@ if scelta == "📝 NUOVA SCHEDA":
     st.markdown(f"## € {prezzo_finale:.2f}")
 
     # LOGICA CONDIZIONALE ACCONTO
-    # L'acconto e il saldo appaiono SOLO se c'è uno sconto attivo
     acconto = 0.0
     saldo = prezzo_finale
     
@@ -131,6 +136,7 @@ if scelta == "📝 NUOVA SCHEDA":
         col_acc1, col_acc2 = st.columns(2)
         
         with col_acc1:
+            # Acconto bloccato: non può essere negativo, né superiore al totale
             acconto = st.number_input("Versa Oggi (€):", min_value=0.0, max_value=prezzo_finale, step=10.0)
         
         saldo = prezzo_finale - acconto
