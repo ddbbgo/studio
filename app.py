@@ -36,11 +36,12 @@ if "carrello" not in st.session_state:
 # --- LISTINO PREDEFINITO ---
 TRATTAMENTI_STANDARD = {
     "Vacuum Therapy (20 min)": 80.0,
-    "Radiofrequenza Viso": 120.0,
-    "Linfodrenaggio Manuale": 70.0,
-    "Laser Epilazione (Gambe)": 150.0,
-    "Pacchetto Dimagrimento Urto": 90.0,
-    "Pulizia Viso Profonda": 60.0
+    "Vacuum Therapy (50 min)": 120.0,
+    "Vacuum Therapy + RFF  (25 min)": 120.0,
+    "RF Viso": 200.0,
+    "Biorivitalizzazione Oro 24K": 200.0,
+    "PMP": 150.0,
+    "Esosomi": 150.0,
 }
 
 # --- FUNZIONE GRAFICA: BARRA EMOZIONALE ---
