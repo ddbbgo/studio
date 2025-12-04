@@ -2,8 +2,8 @@ import streamlit as st
 import datetime
 import pandas as pd
 
-# --- CONFIGURAZIONE UFFICIALE v1.5 ---
-st.set_page_config(page_title="Studio Manager v1.5", layout="centered")
+# --- CONFIGURAZIONE UFFICIALE v1.0 ---
+st.set_page_config(page_title="Studio Manager v1.0", layout="centered")
 
 # --- PASSWORD ---
 password_segreta = "studio2024"
@@ -33,7 +33,7 @@ if "pazienti" not in st.session_state:
 if "carrello" not in st.session_state:
     st.session_state.carrello = []
 
-# --- LISTINO v1.5 ---
+# --- LISTINO v1.0 ---
 TRATTAMENTI_STANDARD = {
     "Vacuum Therapy (20 min)": 80.0,
     "Vacuum Therapy (50 min)": 120.0,
@@ -74,7 +74,7 @@ def crea_barra_emozionale(percentuale):
     """, unsafe_allow_html=True)
 
 # --- MENU PRINCIPALE ---
-st.markdown("### 🏥 Studio Medico & Estetico - v1.5")
+st.markdown("### 🏥 Studio Medico & Estetico - v1.0")
 scelta = st.radio("Menu:", ["📝 NUOVA SCHEDA", "📂 ARCHIVIO GIORNALIERO"], horizontal=True)
 st.divider()
 
@@ -125,9 +125,9 @@ if scelta == "📝 NUOVA SCHEDA":
         st.caption("B. PROTOCOLLO")
         col_ideali, col_proposte = st.columns(2)
         with col_ideali:
-            n_ideali = st.number_input("Sedute IDEALI (Mediche):", value=10, min_value=1)
+            n_ideali = st.number_input("Sedute IDEALI:", value=10, min_value=1)
         with col_proposte:
-            n_proposte = st.number_input("Sedute PROPOSTE (Commerciali):", value=8, min_value=1)
+            n_proposte = st.number_input("Sedute PROPOSTE:", value=8, min_value=1)
 
         st.divider()
 
@@ -214,26 +214,15 @@ if scelta == "📝 NUOVA SCHEDA":
     # --- STEP 3: CASSA FINALE ---
     st.markdown("#### 3. Cassa Finale")
     
-    # Opzione Nascosta Cassa
-    riduzione_cassa = 0.0
-    with st.expander("⚙️ Opzioni"):
-        riduzione_cassa = st.number_input("Adeguamento Cassa (€):", min_value=0.0, max_value=totale_preventivo, step=10.0)
+    # Nessuna opzione extra qui, solo somma
+    prezzo_finale_cassa = totale_preventivo
 
-    prezzo_finale_cassa = totale_preventivo - riduzione_cassa
-
-    if riduzione_cassa > 0:
-        st.caption("Totale:")
-        st.markdown(f"#### <strike style='color:red'>€ {totale_preventivo:.2f}</strike>", unsafe_allow_html=True)
-        st.markdown(f"## € {prezzo_finale_cassa:.2f}")
-    else:
-        st.markdown(f"### Totale da Pagare: € {prezzo_finale_cassa:.2f}")
+    st.markdown(f"### Totale da Pagare: € {prezzo_finale_cassa:.2f}")
 
     # ACCONTO
     acconto = 0.0
     saldo = prezzo_finale_cassa
     
-    # L'acconto appare SOLO se c'è una riduzione attiva nel carrello o in cassa
-    # Oppure se l'estetista lo attiva manualmente espandendo
     st.markdown("##### 🔒 Acconto / Blocca Prezzo")
     col_acc1, col_acc2 = st.columns(2)
     with col_acc1:
