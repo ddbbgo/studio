@@ -2,8 +2,8 @@ import streamlit as st
 import datetime
 import pandas as pd
 
-# --- CONFIGURAZIONE UFFICIALE v1.0 ---
-st.set_page_config(page_title="Studio Manager v1.0", layout="centered")
+# --- CONFIGURAZIONE UFFICIALE v1.1 ---
+st.set_page_config(page_title="Studio Manager v1.1", layout="centered")
 
 # --- PASSWORD ---
 password_segreta = "studio2024"
@@ -33,16 +33,16 @@ if "pazienti" not in st.session_state:
 if "carrello" not in st.session_state:
     st.session_state.carrello = []
 
-# --- LISTINO PREDEFINITO ---
+# --- LISTINO AGGIORNATO (v1.1) ---
 TRATTAMENTI_STANDARD = {
     "Vacuum Therapy (20 min)": 80.0,
     "Vacuum Therapy (50 min)": 120.0,
-    "Vacuum Therapy + RFF  (25 min)": 120.0,
+    "Vacuum Therapy + RFF (25 min)": 120.0,
     "Radiofrequenza Frazionata Viso": 200.0,
     "Radiofrequenza Mono e Bipolare": 100.0,
     "Biorivitalizzazione Oro 24K": 200.0,
     "PMP": 150.0,
-    "Esosomi": 150.0,
+    "Esosomi": 150.0
 }
 
 # --- FUNZIONE GRAFICA: BARRA EMOZIONALE ---
@@ -71,13 +71,13 @@ def crea_barra_emozionale(percentuale):
             <div style="width: {percentuale}%; background-color: {colore}; height: 100%; border-radius: 15px; transition: width 0.5s ease-in-out; box-shadow: 0 0 10px {colore};"></div>
         </div>
         <div style="font-size: 12px; color: gray; margin-top: 5px; font-style: italic;">
-            Maggiore è la copertura, più duraturo sarà l'effetto estetico.
+            La copertura è calcolata sulle sedute accettate rispetto al protocollo medico ideale.
         </div>
     </div>
     """, unsafe_allow_html=True)
 
 # --- MENU PRINCIPALE ---
-st.markdown("### 🏥 Studio Medico & Estetico - v1.0")
+st.markdown("### 🏥 Studio Medico & Estetico - v1.1")
 scelta = st.radio("Menu:", ["📝 NUOVA SCHEDA", "📂 ARCHIVIO GIORNALIERO"], horizontal=True)
 st.divider()
 
@@ -118,7 +118,7 @@ if scelta == "📝 NUOVA SCHEDA":
             # Scrittura Libera
             c1, c2 = st.columns([2, 1])
             with c1:
-                trattamento_scelto = st.text_input("Trattamento (Libero):", placeholder="Es. Protocollo Sposa")
+                trattamento_scelto = st.text_input("Trattamento (Libero):", placeholder="Es. Trattamento Speciale")
             with c2:
                 valore_manuale = st.number_input("Prezzo 1 Seduta:", value=0.0, step=10.0, min_value=0.0)
                 # Mostra Prezzo Grande anche qui
@@ -127,15 +127,20 @@ if scelta == "📝 NUOVA SCHEDA":
                 prezzo_singolo = valore_manuale
 
         st.write("") 
-        col_a, col_b = st.columns(2)
+        
+        # --- NUOVA LOGICA: IDEALI -> PROPOSTE -> ACCETTATE ---
+        col_a, col_b, col_c = st.columns(3)
         with col_a:
-            n_ideali = st.number_input("Sedute IDEALI:", value=8, min_value=1, key="ideal")
+            n_ideali = st.number_input("Sedute IDEALI:", value=10, min_value=1, help="Protocollo medico standard")
         with col_b:
-            n_vendute = st.number_input("Sedute PROPOSTE:", value=6, min_value=1, key="real")
+            n_proposte = st.number_input("Sedute PROPOSTE:", value=8, min_value=1, help="Quante ne hai offerte")
+        with col_c:
+            # Questo è il numero che comanda il prezzo e la barra
+            n_accettate = st.number_input("Sedute ACCETTATE:", value=6, min_value=1, help="Quante ne compra il paziente")
 
-        # Calcolo percentuale
+        # Calcolo percentuale (Sulle accettate vs ideali)
         if n_ideali > 0:
-            efficacia = min(int((n_vendute / n_ideali) * 100), 100)
+            efficacia = min(int((n_accettate / n_ideali) * 100), 100)
         else:
             efficacia = 0
         
@@ -147,12 +152,13 @@ if scelta == "📝 NUOVA SCHEDA":
         if st.button("➕ AGGIUNGI AL PREVENTIVO"):
             if prezzo_singolo > 0:
                 nome_display = trattamento_scelto if trattamento_scelto else "Trattamento Personalizzato"
-                totale_riga = prezzo_singolo * n_vendute
+                # IL PREZZO SI CALCOLA SULLE ACCETTATE
+                totale_riga = prezzo_singolo * n_accettate
                 item = {
                     "Trattamento": nome_display,
-                    "Sedute": n_vendute,
+                    "Sedute": n_accettate, # Salviamo le accettate
                     "Totale": totale_riga,
-                    "Dettaglio": f"{n_vendute}x {nome_display} (€{totale_riga:.0f})"
+                    "Dettaglio": f"{n_accettate}x {nome_display} (€{totale_riga:.0f})"
                 }
                 st.session_state.carrello.append(item)
                 st.rerun()
