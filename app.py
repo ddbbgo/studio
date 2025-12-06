@@ -2,8 +2,8 @@ import streamlit as st
 import datetime
 import pandas as pd
 
-# --- CONFIGURAZIONE UFFICIALE v1.8 ---
-st.set_page_config(page_title="Studio Manager v1.8", layout="centered")
+# --- CONFIGURAZIONE UFFICIALE v1.1 ---
+st.set_page_config(page_title="Studio Manager v1.1", layout="centered")
 
 # --- PASSWORD ---
 password_segreta = "studio2024"
@@ -26,6 +26,31 @@ def check_password():
 if not check_password():
     st.stop()
 
+# --- GESTIONE RESET SICURO (FIX ERRORE STREAMLIT) ---
+# Questa sezione pulisce i campi PRIMA che vengano disegnati
+# evitando l'errore StreamlitAPIException.
+
+if "reset_pacchetto" in st.session_state and st.session_state.reset_pacchetto:
+    # Resetta i campi del pacchetto
+    if "input_tratt_libero" in st.session_state: st.session_state.input_tratt_libero = ""
+    if "input_prezzo_libero" in st.session_state: st.session_state.input_prezzo_libero = 0.0
+    if "input_freq" in st.session_state: st.session_state.input_freq = ""
+    if "input_riduzione" in st.session_state: st.session_state.input_riduzione = 0.0
+    # Reimposta numeri default
+    if "num_ideali" in st.session_state: st.session_state.num_ideali = 10
+    if "num_proposte" in st.session_state: st.session_state.num_proposte = 8
+    if "num_accettate" in st.session_state: st.session_state.num_accettate = 8
+    # Spegni il trigger
+    st.session_state.reset_pacchetto = False
+
+if "reset_paziente" in st.session_state and st.session_state.reset_paziente:
+    # Resetta i campi paziente
+    if "input_nome" in st.session_state: st.session_state.input_nome = ""
+    if "input_oggi" in st.session_state: st.session_state.input_oggi = ""
+    if "input_acconto" in st.session_state: st.session_state.input_acconto = 0.0
+    # Spegni il trigger
+    st.session_state.reset_paziente = False
+
 # --- MEMORIA DATI ---
 if "pazienti" not in st.session_state:
     st.session_state.pazienti = []
@@ -36,7 +61,7 @@ if "carrello" not in st.session_state:
 if "msg_finale" not in st.session_state:
     st.session_state.msg_finale = None
 
-# --- LISTINO v1.8 ---
+# --- LISTINO v1.1 ---
 TRATTAMENTI_STANDARD = {
     "Vacuum Therapy (20 min)": 80.0,
     "Vacuum Therapy (50 min)": 120.0,
@@ -77,7 +102,7 @@ def crea_barra_emozionale(percentuale):
     """, unsafe_allow_html=True)
 
 # --- MENU PRINCIPALE ---
-st.markdown("### 🏥 Studio Medico & Estetico - v1.8")
+st.markdown("### 🏥 Studio Medico & Estetico - v1.1")
 scelta = st.radio("Menu:", ["📝 NUOVA SCHEDA", "📂 ARCHIVIO GIORNALIERO"], horizontal=True)
 st.divider()
 
@@ -120,17 +145,18 @@ if scelta == "📝 NUOVA SCHEDA":
                     st.metric(label="Prezzo Impostato", value=f"€ {valore_manuale}")
                 prezzo_singolo_base = valore_manuale
 
-        # B. PROTOCOLLO E FREQUENZA
+        # B. PROTOCOLLO
         st.write("")
-        st.caption("B. PROTOCOLLO E FREQUENZA")
+        st.caption("B. PROTOCOLLO")
         
-        frequenza_sedute = st.text_input("Frequenza Sedute:", placeholder="Es. 1 a settimana", key="input_freq")
-
         col_ideali, col_proposte = st.columns(2)
         with col_ideali:
             n_ideali = st.number_input("Sedute IDEALI:", value=10, min_value=1, key="num_ideali")
         with col_proposte:
             n_proposte = st.number_input("Sedute PROPOSTE:", value=8, min_value=1, key="num_proposte")
+
+        # Frequenza spostata QUI SOTTO come richiesto
+        frequenza_sedute = st.text_input("Frequenza Sedute:", placeholder="Es. 1 a settimana", key="input_freq")
 
         st.divider()
 
@@ -176,7 +202,6 @@ if scelta == "📝 NUOVA SCHEDA":
                 
                 txt_dettaglio = f"{n_accettate}x {nome_display}"
                 
-                # Aggiungiamo Frequenza e Promo al dettaglio
                 note_extra = []
                 if frequenza_sedute:
                     note_extra.append(f"Freq: {frequenza_sedute}")
@@ -196,25 +221,13 @@ if scelta == "📝 NUOVA SCHEDA":
                 }
                 st.session_state.carrello.append(item)
                 
-                # --- PULIZIA SICURA DEI CAMPI ---
-                # Usiamo un controllo per evitare KeyError
-                if "input_tratt_libero" in st.session_state:
-                    st.session_state["input_tratt_libero"] = ""
-                if "input_prezzo_libero" in st.session_state:
-                    st.session_state["input_prezzo_libero"] = 0.0
-                
-                # Questi ci sono sempre
-                st.session_state["input_freq"] = ""
-                st.session_state["input_riduzione"] = 0.0
-                st.session_state["num_ideali"] = 10
-                st.session_state["num_proposte"] = 8
-                st.session_state["num_accettate"] = 8
-                
+                # Attiva il trigger di pulizia per il prossimo reload
+                st.session_state.reset_pacchetto = True
                 st.rerun()
             else:
                 st.error("Prezzo non valido.")
 
-    # --- CARRELLO (CANCELLAZIONE SINGOLA) ---
+    # --- CARRELLO ---
     st.markdown("##### 📦 Carrello Attuale")
     totale_preventivo = 0.0
     totale_preventivo_pieno = 0.0
@@ -307,12 +320,11 @@ if scelta == "📝 NUOVA SCHEDA":
 {blocco_totali}
 {dett}"""
                 
+                # Resetta tutto e attiva trigger paziente
                 st.session_state.carrello = []
                 st.session_state.msg_finale = msg
-                
-                st.session_state["input_nome"] = ""
-                st.session_state["input_oggi"] = ""
-                st.session_state["input_acconto"] = 0.0
+                st.session_state.reset_paziente = True # Attiva pulizia al prossimo giro
+                st.session_state.reset_pacchetto = True # Pulisci anche i pacchetti parziali
                 
                 st.rerun()
         else:
