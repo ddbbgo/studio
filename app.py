@@ -3,8 +3,8 @@ import datetime
 import pandas as pd
 import urllib.parse
 
-# --- CONFIGURAZIONE UFFICIALE v1.3 ---
-st.set_page_config(page_title="Studio Manager v1.3", layout="centered")
+# --- CONFIGURAZIONE UFFICIALE v1.4 ---
+st.set_page_config(page_title="Studio Manager v1.4", layout="centered")
 
 # --- PASSWORD ---
 password_segreta = "studio2024"
@@ -61,7 +61,7 @@ if "carrello" not in st.session_state:
 if "msg_finale" not in st.session_state:
     st.session_state.msg_finale = None
 
-# --- LISTINO v1.3 ---
+# --- LISTINO v1.4 ---
 TRATTAMENTI_STANDARD = {
     "Vacuum Therapy (20 min)": 80.0,
     "Vacuum Therapy (50 min)": 120.0,
@@ -102,7 +102,7 @@ def crea_barra_emozionale(percentuale):
     """, unsafe_allow_html=True)
 
 # --- MENU PRINCIPALE ---
-st.markdown("### 🏥 Studio Medico & Estetico - v1.3")
+st.markdown("### 🏥 Studio Medico & Estetico - v1.4")
 scelta = st.radio("Menu:", ["📝 NUOVA SCHEDA", "📂 ARCHIVIO GIORNALIERO"], horizontal=True)
 st.divider()
 
@@ -196,8 +196,8 @@ if scelta == "📝 NUOVA SCHEDA":
             omaggio_nome = ""
             omaggio_sedute = 1
             
-            # --- MENU OPZIONI MODIFICATO ---
-            with st.expander("⚙️ Opzioni (Sconti & Omaggi)"):
+            # --- MODIFICA RICHIESTA: TITOLO DISCRETO ---
+            with st.expander("⚙️ Opzioni"):
                 
                 # SEZIONE 1: SCONTO
                 st.markdown("**💰 RIDUZIONE PREZZO**")
@@ -206,7 +206,7 @@ if scelta == "📝 NUOVA SCHEDA":
                 
                 st.markdown("---")
                 
-                # SEZIONE 2: OMAGGIO (Ecco le caselle che non vedevi)
+                # SEZIONE 2: OMAGGIO
                 st.markdown("**🎁 AGGIUNGI OMAGGIO**")
                 omaggio_nome = st.text_input("Nome del Regalo:", placeholder="Es. Pressoterapia", key="input_omaggio_nome")
                 omaggio_sedute = st.number_input("Numero Sedute Regalo:", min_value=1, value=1, key="input_omaggio_sedute")
@@ -269,12 +269,17 @@ if scelta == "📝 NUOVA SCHEDA":
     st.markdown("##### 📦 Carrello Attuale")
     totale_preventivo = 0.0
     totale_preventivo_pieno = 0.0
+    ha_omaggio_nel_carrello = False # Flag per controllo omaggi
     
     if len(st.session_state.carrello) > 0:
         for i, item in enumerate(st.session_state.carrello):
             c_text, c_del = st.columns([5, 1])
             with c_text:
                 st.text(f"{i+1}. {item['Dettaglio']}")
+                # Controllo se c'è un omaggio in questo item
+                if "🎁 OMAGGIO" in item['Dettaglio']:
+                    ha_omaggio_nel_carrello = True
+
             with c_del:
                 if st.button("❌", key=f"del_{i}"):
                     st.session_state.carrello.pop(i)
@@ -302,6 +307,10 @@ if scelta == "📝 NUOVA SCHEDA":
     acconto = 0.0
     saldo = prezzo_finale_cassa
     
+    # Controlliamo se serve obbligatoriamente l'acconto
+    ha_sconto = totale_preventivo < totale_preventivo_pieno
+    acconto_obbligatorio = ha_sconto or ha_omaggio_nel_carrello
+
     st.markdown("##### 🔒 Acconto / Blocca Prezzo")
     col_acc1, col_acc2 = st.columns(2)
     with col_acc1:
@@ -312,19 +321,20 @@ if scelta == "📝 NUOVA SCHEDA":
          if acconto > 0:
              st.metric("DA SALDARE", f"€ {saldo:.2f}")
              st.success("✅ BLOCCATO")
-         elif totale_preventivo < totale_preventivo_pieno:
-             st.warning("⚠️ Per confermare lo sconto serve un acconto!")
+         elif acconto_obbligatorio:
+             # --- MODIFICA RICHIESTA: WARNING ANCHE PER OMAGGI ---
+             st.warning("⚠️ Per confermare Omaggi o Sconti serve un acconto!")
 
     st.markdown("---")
 
     # --- SALVATAGGIO ---
     if st.button("💾 REGISTRA E COPIA PER RECEPTION", type="primary"):
-        ha_sconto = totale_preventivo < totale_preventivo_pieno
         
         if nome_paziente and len(st.session_state.carrello) > 0:
             
-            if ha_sconto and acconto <= 0:
-                st.error("⛔ ERRORE: Sconto applicato ma nessun acconto inserito.")
+            # --- MODIFICA RICHIESTA: CONTROLLO BLOCCANTE ANCHE PER OMAGGI ---
+            if acconto_obbligatorio and acconto <= 0:
+                st.error("⛔ ERRORE: Hai applicato uno Sconto o un Omaggio. Inserisci un Acconto per procedere!")
             else:
                 lista_str = ""
                 for item in st.session_state.carrello:
