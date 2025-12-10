@@ -40,9 +40,9 @@ if "reset_pacchetto" in st.session_state and st.session_state.reset_pacchetto:
     if "input_omaggio_sedute" in st.session_state: st.session_state.input_omaggio_sedute = 1
     
     # Reimposta numeri default
-    if "num_ideali" in st.session_state: st.session_state.num_ideali = 10
-    if "num_proposte" in st.session_state: st.session_state.num_proposte = 8
-    if "num_accettate" in st.session_state: st.session_state.num_accettate = 8
+    if "num_ideali" in st.session_state: st.session_state.num_ideali = 0
+    if "num_proposte" in st.session_state: st.session_state.num_proposte = 0
+    if "num_accettate" in st.session_state: st.session_state.num_accettate = 0
     st.session_state.reset_pacchetto = False
 
 if "reset_paziente" in st.session_state and st.session_state.reset_paziente:
@@ -173,9 +173,9 @@ if scelta == "📝 NUOVA SCHEDA":
         st.caption("B. PROTOCOLLO")
         col_ideali, col_proposte = st.columns(2)
         with col_ideali:
-            n_ideali = st.number_input("Sedute IDEALI:", value=10, min_value=1, key="num_ideali")
+            n_ideali = st.number_input("Sedute IDEALI:", value=0, min_value=0, key="num_ideali")
         with col_proposte:
-            n_proposte = st.number_input("Sedute PROPOSTE:", value=8, min_value=1, key="num_proposte")
+            n_proposte = st.number_input("Sedute PROPOSTE:", value=0, min_value=0, key="num_proposte")
 
         frequenza_sedute = st.text_input("Frequenza Sedute:", placeholder="Es. 1 a settimana", key="input_freq")
 
