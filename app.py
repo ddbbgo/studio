@@ -3,22 +3,30 @@ import datetime
 import pandas as pd
 import urllib.parse
 
-# --- CONFIGURAZIONE UFFICIALE v2.0 ---
-st.set_page_config(page_title="Studio Manager v2.0", layout="centered")
+# --- CONFIGURAZIONE UFFICIALE v2.1 ---
+st.set_page_config(page_title="Studio Manager v2.1", layout="centered")
 
-# --- PASSWORD ---
+# --- PASSWORD PERSISTENTE ---
 password_segreta = "studio2024"
 
 def check_password():
-    if "password_correct" not in st.session_state:
-        st.session_state.password_correct = False
-    if st.session_state.password_correct:
+    # 1. Controlla se c'è il "timbro" nell'URL (Parametro auth=true)
+    # Questo permette di aggiornare la pagina senza rifare il login
+    if "auth" in st.query_params and st.query_params["auth"] == "true":
         return True
+        
+    # 2. Controlla la sessione corrente
+    if st.session_state.get("password_correct", False):
+        return True
+
+    # 3. Mostra Login
     st.markdown("### 🔒 Accesso Riservato")
     pwd = st.text_input("Password:", type="password")
     if st.button("Entra"):
         if pwd == password_segreta:
             st.session_state.password_correct = True
+            # Inserisce il timbro nell'URL per non chiedere più la psw al refresh
+            st.query_params["auth"] = "true" 
             st.rerun()
         else:
             st.error("Password errata")
@@ -27,27 +35,34 @@ def check_password():
 if not check_password():
     st.stop()
 
-# --- GESTIONE RESET (RESET FORZATO SU CHIAVI NUOVE) ---
+# --- TASTO LOGOUT (Opzionale, per sicurezza) ---
+with st.sidebar:
+    if st.button("🔒 Logout (Esci)"):
+        st.query_params.clear() # Toglie il timbro
+        st.session_state.clear()
+        st.rerun()
+
+# --- GESTIONE RESET SICURO ---
 if "reset_trigger" in st.session_state and st.session_state.reset_trigger:
     # Resetta Anagrafica
-    st.session_state.z_nome = ""
-    st.session_state.z_oggi = ""
-    st.session_state.z_acconto = 0.0
+    st.session_state.final_nome = ""
+    st.session_state.final_oggi = ""
+    st.session_state.final_acconto = 0.0
     
     # Resetta Pacchetto
-    st.session_state.z_tratt_libero = ""
-    st.session_state.z_prezzo_libero = 0.0
-    st.session_state.z_freq = ""
-    st.session_state.z_riduzione = 0.0
+    st.session_state.final_tratt_libero = ""
+    st.session_state.final_prezzo_libero = 0.0
+    st.session_state.final_freq = ""
+    st.session_state.final_riduzione = 0.0
     
     # Resetta Numeri (FORZATURA A ZERO)
-    st.session_state.z_ideali = 0
-    st.session_state.z_proposte = 0
-    st.session_state.z_accettate = 0
+    st.session_state.final_ideali = 0
+    st.session_state.final_proposte = 0
+    st.session_state.final_accettate = 0
     
     # Resetta Omaggio
-    st.session_state.z_omaggio_nome = ""
-    st.session_state.z_omaggio_sedute = 1
+    st.session_state.final_omaggio_nome = ""
+    st.session_state.final_omaggio_sedute = 1
     
     st.session_state.reset_trigger = False
 
@@ -61,7 +76,7 @@ if "carrello" not in st.session_state:
 if "msg_finale" not in st.session_state:
     st.session_state.msg_finale = None
 
-# --- LISTINO v2.0 ---
+# --- LISTINO v2.1 ---
 TRATTAMENTI_STANDARD = {
     "Vacuum Therapy (20 min)": 80.0,
     "Vacuum Therapy (50 min)": 120.0,
@@ -102,7 +117,7 @@ def crea_barra_emozionale(percentuale):
     """, unsafe_allow_html=True)
 
 # --- MENU PRINCIPALE ---
-st.markdown("### 🏥 Studio Medico & Estetico - v2.0")
+st.markdown("### 🏥 Studio Medico & Estetico - v2.1")
 scelta = st.radio("Menu:", ["📝 NUOVA SCHEDA", "📂 ARCHIVIO GIORNALIERO"], horizontal=True)
 st.divider()
 
@@ -134,10 +149,10 @@ if scelta == "📝 NUOVA SCHEDA":
     st.markdown("#### 1. Anagrafica Paziente")
     col1, col2 = st.columns(2)
     with col1:
-        # CHIAVI "Z" PER FORZARE RESET MEMORIA
-        nome_paziente = st.text_input("Nome e Cognome", key="z_nome")
+        # CHIAVI "final" PER FORZARE RESET
+        nome_paziente = st.text_input("Nome e Cognome", key="final_nome")
     with col2:
-        trattamento_oggi = st.text_input("Trattamento fatto OGGI", placeholder="Es. Igiene", key="z_oggi")
+        trattamento_oggi = st.text_input("Trattamento fatto OGGI", placeholder="Es. Igiene", key="final_oggi")
 
     st.markdown("---")
 
@@ -161,9 +176,9 @@ if scelta == "📝 NUOVA SCHEDA":
         else:
             c1, c2 = st.columns([2, 1])
             with c1:
-                trattamento_scelto = st.text_input("Trattamento (Libero):", placeholder="Es. Trattamento Speciale", key="z_tratt_libero")
+                trattamento_scelto = st.text_input("Trattamento (Libero):", placeholder="Es. Trattamento Speciale", key="final_tratt_libero")
             with c2:
-                valore_manuale = st.number_input("Prezzo 1 Seduta:", value=0.0, step=10.0, key="z_prezzo_libero")
+                valore_manuale = st.number_input("Prezzo 1 Seduta:", value=0.0, step=10.0, key="final_prezzo_libero")
                 if valore_manuale > 0:
                     st.metric(label="Prezzo Impostato", value=f"€ {valore_manuale}")
                 prezzo_singolo_base = valore_manuale
@@ -173,13 +188,13 @@ if scelta == "📝 NUOVA SCHEDA":
         st.caption("B. PROTOCOLLO")
         col_ideali, col_proposte = st.columns(2)
         with col_ideali:
-            # CHIAVI Z -> PARTONO DA 0
-            n_ideali = st.number_input("Sedute IDEALI:", value=0, min_value=0, key="z_ideali")
+            # CHIAVI final -> PARTONO DA 0
+            n_ideali = st.number_input("Sedute IDEALI:", value=0, min_value=0, key="final_ideali")
         with col_proposte:
-            # CHIAVI Z -> PARTONO DA 0
-            n_proposte = st.number_input("Sedute PROPOSTE:", value=0, min_value=0, key="z_proposte")
+            # CHIAVI final -> PARTONO DA 0
+            n_proposte = st.number_input("Sedute PROPOSTE:", value=0, min_value=0, key="final_proposte")
 
-        frequenza_sedute = st.text_input("Frequenza Sedute:", placeholder="Es. 1 a settimana", key="z_freq")
+        frequenza_sedute = st.text_input("Frequenza Sedute:", placeholder="Es. 1 a settimana", key="final_freq")
 
         st.divider()
 
@@ -190,7 +205,7 @@ if scelta == "📝 NUOVA SCHEDA":
         
         with col_conferma:
             # Qui value=0 fisso per evitare che erediti vecchi valori
-            n_accettate = st.number_input("Sedute ACCETTATE (Reali):", value=0, min_value=0, key="z_accettate")
+            n_accettate = st.number_input("Sedute ACCETTATE (Reali):", value=0, min_value=0, key="final_accettate")
             
             totale_pieno_reale = prezzo_singolo_base * n_accettate
             
@@ -204,14 +219,14 @@ if scelta == "📝 NUOVA SCHEDA":
                 # SEZIONE 1: SCONTO
                 st.markdown("**💰 RIDUZIONE PREZZO**")
                 st.caption(f"Totale attuale: € {totale_pieno_reale:.2f}")
-                riduzione_applicata = st.number_input("Sconto in Euro (€):", min_value=0.0, max_value=totale_pieno_reale, step=10.0, key="z_riduzione")
+                riduzione_applicata = st.number_input("Sconto in Euro (€):", min_value=0.0, max_value=totale_pieno_reale, step=10.0, key="final_riduzione")
                 
                 st.markdown("---")
                 
                 # SEZIONE 2: OMAGGIO
                 st.markdown("**🎁 AGGIUNGI OMAGGIO**")
-                omaggio_nome = st.text_input("Nome del Regalo:", placeholder="Es. Pressoterapia", key="z_omaggio_nome")
-                omaggio_sedute = st.number_input("Numero Sedute Regalo:", min_value=1, value=1, key="z_omaggio_sedute")
+                omaggio_nome = st.text_input("Nome del Regalo:", placeholder="Es. Pressoterapia", key="final_omaggio_nome")
+                omaggio_sedute = st.number_input("Numero Sedute Regalo:", min_value=1, value=1, key="final_omaggio_sedute")
 
         # Calcolo Finale
         totale_riga_finale = totale_pieno_reale - riduzione_applicata
@@ -307,13 +322,14 @@ if scelta == "📝 NUOVA SCHEDA":
     acconto = 0.0
     saldo = prezzo_finale_cassa
     
+    # Controlliamo se serve obbligatoriamente l'acconto
     ha_sconto = totale_preventivo < totale_preventivo_pieno
     acconto_obbligatorio = ha_sconto or ha_omaggio_nel_carrello
 
     st.markdown("##### 🔒 Acconto / Blocca Prezzo")
     col_acc1, col_acc2 = st.columns(2)
     with col_acc1:
-        acconto = st.number_input("Versa Oggi (€):", min_value=0.0, max_value=prezzo_finale_cassa if prezzo_finale_cassa > 0 else 0.0, step=10.0, key="z_acconto")
+        acconto = st.number_input("Versa Oggi (€):", min_value=0.0, max_value=prezzo_finale_cassa if prezzo_finale_cassa > 0 else 0.0, step=10.0, key="final_acconto")
     
     saldo = prezzo_finale_cassa - acconto
     with col_acc2:
