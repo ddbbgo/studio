@@ -187,7 +187,7 @@ if scelta == "📝 NUOVA SCHEDA":
         col_conferma, col_totale = st.columns([1, 1])
         
         with col_conferma:
-            n_accettate = st.number_input("Sedute ACCETTATE (Reali):", value=n_proposte, min_value=1, key="num_accettate")
+            n_accettate = st.number_input("Sedute ACCETTATE (Reali):", value=n_proposte, min_value=0, key="num_accettate")
             
             totale_pieno_reale = prezzo_singolo_base * n_accettate
             
