@@ -77,10 +77,10 @@ TRATTAMENTI_STANDARD = {
     "Biorivitalizzazione Oro 24K": 200.0,
     "PMP": 150.0,
     "Esosomi": 150.0,
-    "Linfodrenaggio Manuale": 70.0,
-    "Laser Epilazione (Gambe)": 150.0,
-    "Pacchetto Dimagrimento Urto": 90.0,
-    "Pulizia Viso Profonda": 60.0
+    "Linfodrenaggio Manuale": 80.0,
+    "Pulizia Viso Profonda": 150.0,
+    "Pulizia Viso 20 Minuti": 100.0
+    
 }
 
 # --- FUNZIONE GRAFICA ---
