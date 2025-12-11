@@ -76,10 +76,10 @@ TRATTAMENTI_STANDARD = {
     "Radiofrequenza Mono e Bipolare": 100.0,
     "Biorivitalizzazione Oro 24K": 200.0,
     "PMP": 150.0,
-    "Esosomi": 150.0,
+    "Esosomi": 250.0,
     "Linfodrenaggio Manuale": 80.0,
     "Pulizia Viso Profonda": 150.0,
-    "Pulizia Viso 20 Minuti": 100.0
+    "Pulizia Viso 20 Minuti": 100.0,
     
 }
 
